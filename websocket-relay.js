@@ -1,4 +1,4 @@
-// Use the websocket-relay to serve a raw MPEG-TS over WebSockets. You can use
+// Use the websocket-relay to serve a raw MPEG-TS over WebSockets. You can usea
 // ffmpeg to feed the relay. ffmpeg -> websocket-relay -> browser
 // Example:
 // node websocket-relay yoursecret 8081 8082
@@ -20,10 +20,26 @@ var STREAM_SECRET = process.argv[2],
 	STREAM_PORT = process.argv[3] || 8081,
 	WEBSOCKET_PORT = process.argv[4] || 8082,
 	RECORD_STREAM = false;
+console.log(STREAM_SECRET);
+// Minimal amount of secure websocket server
+var fscert = require('fs');
+
+// read ssl certificate
+var privateKey = fscert.readFileSync('/opt/stream.aqtogel.com/private.key', 'utf8');
+var certificate = fscert.readFileSync('/opt/stream.aqtogel.com/certificate.crt', 'utf8');
+
+var credentials = { key: privateKey, cert: certificate };
+var https = require('https');
+
+//pass in your credentials to create an https server
+var httpsServer = https.createServer(credentials);
+httpsServer.listen(WEBSOCKET_PORT);
 
 // Websocket Server
-var socketServer = new WebSocket.Server({port: WEBSOCKET_PORT, perMessageDeflate: false});
+// var socketServer = new WebSocket.Server({port: WEBSOCKET_PORT, perMessageDeflate: false});
+var socketServer = new WebSocket.Server({server: httpsServer, perMessageDeflate: false});
 socketServer.connectionCount = 0;
+
 socketServer.on('connection', function(socket, upgradeReq) {
 	socketServer.connectionCount++;
 	console.log(
@@ -39,6 +55,7 @@ socketServer.on('connection', function(socket, upgradeReq) {
 		);
 	});
 });
+
 socketServer.broadcast = function(data) {
 	socketServer.clients.forEach(function each(client) {
 		if (client.readyState === WebSocket.OPEN) {
@@ -65,12 +82,14 @@ var streamServer = http.createServer( function(request, response) {
 		request.socket.remoteAddress + ':' +
 		request.socket.remotePort
 	);
+	
 	request.on('data', function(data){
 		socketServer.broadcast(data);
 		if (request.socket.recording) {
 			request.socket.recording.write(data);
 		}
 	});
+	
 	request.on('end',function(){
 		console.log('close');
 		if (request.socket.recording) {
