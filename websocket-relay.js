@@ -17,16 +17,16 @@ if (process.argv.length < 3) {
 }
 
 var STREAM_SECRET = process.argv[2],
-	STREAM_PORT = process.argv[3] || 8081,
-	WEBSOCKET_PORT = process.argv[4] || 8082,
+	STREAM_PORT = process.argv[3] || 8089,
+	WEBSOCKET_PORT = process.argv[4] || 8088,
 	RECORD_STREAM = false;
 console.log(STREAM_SECRET);
 // Minimal amount of secure websocket server
 var fscert = require('fs');
 
 // read ssl certificate
-var privateKey = fscert.readFileSync('/opt/stream.aqtogel.com/private.key', 'utf8');
-var certificate = fscert.readFileSync('/opt/stream.aqtogel.com/certificate.crt', 'utf8');
+var privateKey = fscert.readFileSync('/opt/ssl/privkey.pem', 'utf8');
+var certificate = fscert.readFileSync('/opt/ssl/cert.pem', 'utf8');
 
 var credentials = { key: privateKey, cert: certificate };
 var https = require('https');
